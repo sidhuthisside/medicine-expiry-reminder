@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Registration and Medicine Reminder</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background: linear-gradient(120deg, #4facfe, #00f2fe);
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .container {
+            background: #fff;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            width: 100%;
+            max-width: 400px;
+        }
+
+        h1 {
+            margin-bottom: 1rem;
+            font-size: 1.8rem;
+            color: #007acc;
+        }
+
+        p {
+            margin-bottom: 2rem;
+            font-size: 1rem;
+            color: #555;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+        }
+
+        label {
+            margin-bottom: 0.5rem;
+            font-weight: bold;
+        }
+
+        input {
+            padding: 0.8rem;
+            margin-bottom: 1rem;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1rem;
+        }
+
+        button {
+            padding: 0.8rem;
+            background: #007acc;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        button:hover {
+            background: #005999;
+        }
+
+        .response {
+            margin-top: 1rem;
+            font-size: 1rem;
+            color: #007700;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>User Registration</h1>
+        <p>Register to add medicine reminders and receive notifications.</p>
+        
+        <!-- Registration Form -->
+        <div id="registrationForm">
+            <form id="registerForm">
+                <label for="regName">Your Name:</label>
+                <input type="text" id="regName" name="regName" required placeholder="Enter your name">
+
+                <label for="regEmail">Email:</label>
+                <input type="email" id="regEmail" name="regEmail" required placeholder="Enter your email">
+
+                <label for="regPassword">Password:</label>
+                <input type="password" id="regPassword" name="regPassword" required placeholder="Enter your password">
+
+                <button type="submit">Register</button>
+            </form>
+        </div>
+
+        <!-- Login Form -->
+        <div id="loginForm" class="hidden">
+            <form id="loginUserForm">
+                <label for="loginEmail">Email:</label>
+                <input type="email" id="loginEmail" name="loginEmail" required placeholder="Enter your email">
+
+                <label for="loginPassword">Password:</label>
+                <input type="password" id="loginPassword" name="loginPassword" required placeholder="Enter your password">
+
+                <button type="submit">Login</button>
+            </form>
+        </div>
+
+        <!-- Medicine Form -->
+        <div id="medicineFormContainer" class="hidden">
+            <h1>Add Medicine Details</h1>
+            <form id="medicineForm">
+                <label for="medicineName">Medicine Name:</label>
+                <input type="text" id="medicineName" name="medicineName" required placeholder="Enter medicine name">
+
+                <label for="expiryDate">Expiry Date:</label>
+                <input type="date" id="expiryDate" name="expiryDate" required>
+
+                <button type="submit">Add Medicine</button>
+            </form>
+            <div id="response" class="response"></div>
+        </div>
+    </div>
+
+    <script>
+        let users = []; // In-memory user storage (Replace with database in real-world use)
+        let loggedInUser = null;
+
+        // Handle user registration
+        document.getElementById('registerForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const name = document.getElementById('regName').value;
+            const email = document.getElementById('regEmail').value;
+            const password = document.getElementById('regPassword').value;
+
+            // Check if email already exists
+            if (users.some(user => user.email === email)) {
+                alert('Email is already registered!');
+                return;
+            }
+
+            // Register the new user
+            const newUser = { name, email, password };
+            users.push(newUser);
+            alert('Registration successful! Please log in.');
+
+            // Switch to login form
+            document.getElementById('registrationForm').classList.add('hidden');
+            document.getElementById('loginForm').classList.remove('hidden');
+        });
+
+        // Handle user login
+        document.getElementById('loginUserForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+
+            const user = users.find(user => user.email === email && user.password === password);
+            if (user) {
+                loggedInUser = user;
+                alert('Login successful!');
+
+                // Show medicine form
+                document.getElementById('loginForm').classList.add('hidden');
+                document.getElementById('medicineFormContainer').classList.remove('hidden');
+            } else {
+                alert('Invalid credentials!');
+            }
+        });
+
+        // Handle medicine form submission
+        document.getElementById('medicineForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const medicineName = document.getElementById('medicineName').value;
+            const expiryDate = document.getElementById('expiryDate').value;
+
+            if (!loggedInUser) {
+                alert('You must be logged in to add medicine details!');
+                return;
+            }
+
+            // Send the medicine details to the backend
+            const response = await fetch('/api/medicine', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    name: loggedInUser.name,
+                    whatsapp: loggedInUser.email, // Assuming email is used as whatsapp (adjust accordingly)
+                    medicine: medicineName,
+                    expiry: expiryDate
+                })
+            });
+
+            const data = await response.json();
+            document.getElementById('response').textContent = data.message;
+            document.getElementById('response').style.color = data.error ? 'red' : 'green';
+        });
+    </script>
+</body>
+</html>
